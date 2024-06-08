@@ -1,27 +1,24 @@
 """ This module contains the main functions of the program """
 
 import os
+import dataclasses
+import tkinter as tk
 import cv2
 import numpy as np
 import pyautogui
-
-# from skimage.metrics import structural_similarity as ssim
 import skimage
+from PIL import Image, ImageTk
 
 
+@dataclasses.dataclass
 class Slot:
     """This class represents a slot in the game"""
 
-    index = None
-    screenshot = None
-    cardImage = None
-    cardName = None
-
-    def __init__(
-        self,
-        an_index,
-    ):
-        self.index = an_index
+    index: int = None
+    screenshot: str = None
+    card_image: str = None
+    card_name: str = None
+    similarity: float = 0.0
 
 
 def take_screenshot(the_slots) -> list:
@@ -43,7 +40,15 @@ def take_screenshot(the_slots) -> list:
 
     # Assign each screenshot to a slot
     for j in range(8):
-        the_slots[j].screenshot = screenshots[j]
+
+        path = os.path.join(
+            os.getcwd(), "crassistant", "img", "screenshots", f"screenshot{j}.png"
+        )
+
+        # Save the screenshot in the screenshots directory
+        cv2.imwrite(path, screenshots[j])
+
+        the_slots[j].screenshot = path
 
     return the_slots
 
@@ -77,11 +82,11 @@ def resize_images(width, height) -> None:
 
 
 # Function to find out which images from the img diretory is the most close to the screenshot
-def find_closest_image(the_slot, unknown_image) -> Slot:
+def find_closest_image(the_slot, unknown_image_path, unknown_image) -> Slot:
     """Find the image that is the most close to the screenshot of the slot"""
 
     # Get the screenshot of the slot
-    screenshot = the_slot.screenshot
+    screenshot = cv2.imread(the_slot.screenshot)
 
     # Get the similarity between the screenshot and the unknown image
     similarity = skimage.metrics.structural_similarity(
@@ -90,14 +95,14 @@ def find_closest_image(the_slot, unknown_image) -> Slot:
 
     # If the similarity is high, the slot is empty
     if similarity > 0.75:
-        the_slot.screenshot = screenshot
-        the_slot.cardImage = unknown_image
-        the_slot.cardName = "unknown"
+        the_slot.card_image = unknown_image_path
+        the_slot.card_name = "unknown"
+        the_slot.similarity = similarity
         return the_slot
 
     max_ssim = -1
     most_similar_image = None
-    image_file_chosen = None
+    image_path_chosen = None
 
     path = os.path.join(os.getcwd(), "crassistant", "img", "resized")
 
@@ -106,8 +111,10 @@ def find_closest_image(the_slot, unknown_image) -> Slot:
 
     for image in images:
 
+        image_path = os.path.join(path, image)
+
         # Read the image
-        image_file = cv2.imread(os.path.join(path, image))
+        image_file = cv2.imread(image_path)
 
         similarity = skimage.metrics.structural_similarity(
             image_file, screenshot, win_size=7, channel_axis=2
@@ -116,54 +123,152 @@ def find_closest_image(the_slot, unknown_image) -> Slot:
         if similarity > max_ssim:
             max_ssim = similarity
             most_similar_image = image
-            image_file_chosen = image_file
+            image_path_chosen = image_path
 
-    the_slot.cardImage = image_file_chosen
-    the_slot.screenshot = screenshot
-    the_slot.cardName = most_similar_image.split(".")[0]
-
-    print(f"{the_slot.cardName} : {max_ssim}")
+    the_slot.card_image = image_path_chosen
+    the_slot.card_name = most_similar_image.split(".")[0]
+    the_slot.similarity = max_ssim
 
     return the_slot
 
 
+def update(
+    root,
+    slots,
+    unknown_image_path,
+    unknown_image,
+    screenshot_image_labels,
+    card_image_labels,
+    card_vars,
+    similirity_vars,
+):
+    """Update the GUI"""
+
+    slots = take_screenshot(slots)
+    unknown_from_there = False
+    for i in range(8):
+
+        slot = slots[i]
+
+        if unknown_from_there:
+            slot.card_name = "unknown"
+            slot.card_image = unknown_image_path
+            continue
+
+        slot = find_closest_image(slot, unknown_image_path, unknown_image)
+
+        if slot.card_name == "unknown":
+            unknown_from_there = True
+
+        screenshot = Image.open(slot.screenshot)
+        screenshot_image = ImageTk.PhotoImage(screenshot)
+        screenshot_image_labels[i].configure(image=screenshot_image)
+        screenshot_image_labels[i].image = screenshot_image
+
+        card = Image.open(slot.card_image)
+        card_image = ImageTk.PhotoImage(card)
+        card_image_labels[i].configure(image=card_image)
+        card_image_labels[i].image = card_image
+
+        card_vars[i].set(slot.card_name)
+
+        similirity_vars[i].set(f"{slot.similarity:0.3f}")
+
+    root.after(
+        1000,
+        update,
+        root,
+        slots,
+        unknown_image_path,
+        unknown_image,
+        screenshot_image_labels,
+        card_image_labels,
+        card_vars,
+        similirity_vars,
+    )
+
+
 def main():
-    """Main function of the program"""
+    """Main function"""
 
     # Initialize the 8 slots
     slots = []
     for i in range(8):
-        slots.append(Slot(i))
+        slots.append(Slot(i, None, None, None))
 
-    take_screenshot(slots)
-
-    resize_images(slots[0].screenshot.shape[1], slots[0].screenshot.shape[0])
+    resize_images(60, 75)
 
     # Get the unknown image in the img/misc directory
-    unknown_image = cv2.imread(
-        os.path.join(os.getcwd(), "crassistant", "img", "misc", "unknown.png")
+    unknown_image_path = os.path.join(
+        os.getcwd(), "crassistant", "img", "misc", "unknown.png"
     )
 
-    unknown_from_there = False
+    unknown_image = cv2.imread(unknown_image_path)
 
-    for slot in slots:
+    # create root window
+    root = tk.Tk()
 
-        if unknown_from_there:
-            slot.cardName = "unknown"
-            slot.cardImage = unknown_image
-            continue
+    # root window title and dimension
+    root.title("CR assistant")
+    # Set geometry (widthxheight)
+    root.geometry("600x200")
 
-        slot = find_closest_image(slot, unknown_image)
+    screenshot_image_labels = []
+    card_image_labels = []
+    card_vars = []
+    similirity_vars = []
+    # Set a grid with 1 row and 8 columns
+    for column in range(8):
 
-        if slot.cardName == "unknown":
-            unknown_from_there = True
+        screenshot = Image.open(unknown_image_path)
+        screenshot_image = ImageTk.PhotoImage(screenshot)
 
-    for slot in slots:
-        print(slot.cardName)
-        cv2.imshow("screenshot", slot.screenshot)
-        cv2.imshow("card", slot.cardImage)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        screenshot_label = tk.Label(
+            root,
+            image=screenshot_image,
+        )
+
+        screenshot_label.grid(row=0, column=column)
+        screenshot_label.image = screenshot_image
+        screenshot_image_labels.append(screenshot_label)
+
+        card = Image.open(unknown_image_path)
+        card_image = ImageTk.PhotoImage(card)
+
+        card_label = tk.Label(
+            root,
+            image=card_image,
+        )
+
+        card_label.grid(row=1, column=column)
+        card_label.image = card_image
+        card_image_labels.append(card_label)
+
+        card_name_var = tk.StringVar()
+        card_vars.append(card_name_var)
+
+        tk.Label(root, textvariable=card_name_var).grid(row=2, column=column)
+
+        similirity_var = tk.StringVar()
+        similirity_vars.append(similirity_var)
+
+        tk.Label(
+            root,
+            textvariable=similirity_var,
+        ).grid(row=3, column=column)
+
+    update(
+        root,
+        slots,
+        unknown_image_path,
+        unknown_image,
+        screenshot_image_labels,
+        card_image_labels,
+        card_vars,
+        similirity_vars,
+    )
+
+    root.mainloop()
 
 
 main()

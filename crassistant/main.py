@@ -16,7 +16,6 @@ def update(
     unknown_image,
     screenshot_image_labels,
     card_image_labels,
-    card_vars,
     similirity_vars,
 ):
     """Update the GUI"""
@@ -26,25 +25,11 @@ def update(
 
     slots = take_screenshot(slots)
 
-    t_screenshot = pc() - t0
-    print(f"  {t_screenshot:0.3f}")
-
-    unknown_from_there = False
     for i in range(8):
-
-        t1 = pc()
 
         slot = slots[i]
 
-        if unknown_from_there:
-            slot.card_name = "unknown"
-            slot.card_image = unknown_image_path
-            continue
-
         slot = find_closest_image(slot, unknown_image_path, unknown_image)
-
-        if slot.card_name == "unknown":
-            unknown_from_there = True
 
         screenshot = Image.open(slot.screenshot)
         screenshot_image = ImageTk.PhotoImage(screenshot)
@@ -56,17 +41,12 @@ def update(
         card_image_labels[i].configure(image=card_image)
         card_image_labels[i].image = card_image
 
-        card_vars[i].set(slot.card_name)
-
         similirity_vars[i].set(f"{slot.similarity:0.3f}")
-
-        t_card = pc() - t1
-        print(f"  card {i}:{t_card:0.3f}")
 
     print(f"{pc() - t0:0.3f}")
 
     root.after(
-        3000,
+        1000,
         update,
         root,
         slots,
@@ -74,7 +54,6 @@ def update(
         unknown_image,
         screenshot_image_labels,
         card_image_labels,
-        card_vars,
         similirity_vars,
     )
 
@@ -106,7 +85,6 @@ def main():
 
     screenshot_image_labels = []
     card_image_labels = []
-    card_vars = []
     similirity_vars = []
     # Set a grid with 1 row and 8 columns
     for column in range(8):
@@ -135,11 +113,6 @@ def main():
         card_label.image = card_image
         card_image_labels.append(card_label)
 
-        card_name_var = tk.StringVar()
-        card_vars.append(card_name_var)
-
-        tk.Label(root, textvariable=card_name_var).grid(row=2, column=column)
-
         similirity_var = tk.StringVar()
         similirity_vars.append(similirity_var)
 
@@ -155,7 +128,6 @@ def main():
         unknown_image,
         screenshot_image_labels,
         card_image_labels,
-        card_vars,
         similirity_vars,
     )
 

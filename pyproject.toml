@@ -11,6 +11,7 @@ opencv-python = "^4.9.0.80"
 pyautogui = "^0.9.54"
 pyscreeze = "^0.1.30"
 pillow = "^10.3.0"
+joblib = "^1.4.2"
 
 
 [build-system]

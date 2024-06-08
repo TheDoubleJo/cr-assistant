@@ -1,10 +1,12 @@
 """This module contains functions to take a screenshot, resize image, find the most similar image"""
 
 import os
+import multiprocessing
 import cv2
 import numpy as np
 import pyautogui
 import skimage
+from joblib import Parallel, delayed
 from crassistant.slot import Slot
 
 
@@ -68,6 +70,17 @@ def resize_images(width, height) -> None:
         cv2.imwrite(os.path.join(resized_path, image), resized_image)
 
 
+def compare_images(image, screenshot, path):
+    """Compare the screenshot of the slot with the images in the img/resized directory"""
+
+    image_path = os.path.join(path, image)
+    image_file = cv2.imread(image_path)
+    similarity = skimage.metrics.structural_similarity(
+        image_file, screenshot, win_size=7, channel_axis=2
+    )
+    return similarity, image, image_path
+
+
 # Function to find out which images from the img diretory is the most close to the screenshot
 def find_closest_image(the_slot, unknown_image_path, unknown_image) -> Slot:
     """Find the image that is the most close to the screenshot of the slot"""
@@ -87,30 +100,17 @@ def find_closest_image(the_slot, unknown_image_path, unknown_image) -> Slot:
         the_slot.similarity = similarity
         return the_slot
 
-    max_ssim = -1
-    most_similar_image = None
-    image_path_chosen = None
-
     path = os.path.join(os.getcwd(), "crassistant", "img", "resized")
 
     # Get the list of images in the img/cards directory
     images = os.listdir(path)
 
-    for image in images:
+    num_cores = multiprocessing.cpu_count()
+    results = Parallel(n_jobs=num_cores)(
+        delayed(compare_images)(image, screenshot, path) for image in images
+    )
 
-        image_path = os.path.join(path, image)
-
-        # Read the image
-        image_file = cv2.imread(image_path)
-
-        similarity = skimage.metrics.structural_similarity(
-            image_file, screenshot, win_size=7, channel_axis=2
-        )
-
-        if similarity > max_ssim:
-            max_ssim = similarity
-            most_similar_image = image
-            image_path_chosen = image_path
+    max_ssim, most_similar_image, image_path_chosen = max(results, key=lambda x: x[0])
 
     the_slot.card_image = image_path_chosen
     the_slot.card_name = most_similar_image.split(".")[0]

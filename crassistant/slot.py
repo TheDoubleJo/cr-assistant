@@ -8,7 +8,6 @@ class Slot:
     """This class represents a slot in the game"""
 
     index: int = None
-    screenshot: str = None
-    card_image: str = None
-    card_name: str = None
+    previous_screenshot: str = None
+    current_screenshot: str = None
     similarity: float = 0.0

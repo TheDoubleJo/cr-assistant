@@ -1,13 +1,10 @@
 """This module contains functions to take a screenshot, resize image, find the most similar image"""
 
 import os
-import multiprocessing
+import shutil
 import cv2
 import numpy as np
 import pyautogui
-import skimage
-from joblib import Parallel, delayed
-from crassistant.slot import Slot
 
 
 def take_screenshot(the_slots) -> list:
@@ -30,90 +27,30 @@ def take_screenshot(the_slots) -> list:
     # Assign each screenshot to a slot
     for j in range(8):
 
-        path = os.path.join(
-            os.getcwd(), "crassistant", "img", "screenshots", f"screenshot{j}.png"
+        current_screenshot_path = os.path.join(
+            os.getcwd(),
+            "crassistant",
+            "img",
+            "screenshots",
+            f"current_screenshot_{j}.png",
         )
 
-        # Save the screenshot in the screenshots directory
-        cv2.imwrite(path, screenshots[j])
+        previous_screenshot_path = os.path.join(
+            os.getcwd(),
+            "crassistant",
+            "img",
+            "screenshots",
+            f"previous_screenshot_{j}.png",
+        )
 
-        the_slots[j].screenshot = path
+        # Rename the current screenshot file to previous screenshot file
+        if os.path.exists(current_screenshot_path):
+            shutil.move(current_screenshot_path, previous_screenshot_path)
+
+        # Save the screenshot in the screenshots directory
+        cv2.imwrite(current_screenshot_path, screenshots[j])
+
+        the_slots[j].previous_screenshot = previous_screenshot_path
+        the_slots[j].current_screenshot = current_screenshot_path
 
     return the_slots
-
-
-# Function to resize all the images in the img/cards directory to 75x60
-# and save them in the img/resized directory
-def resize_images(width, height) -> None:
-    """Resize all the images in the img/cards directory"""
-
-    path = os.path.join(os.getcwd(), "crassistant", "img", "cards")
-    resized_path = os.path.join(os.getcwd(), "crassistant", "img", "resized")
-
-    # If the directory img/resized is not empty, do nothing
-    if os.listdir(resized_path):
-        return
-
-    # Get the list of images in the img/cards directory
-    images = os.listdir(path)
-
-    for image in images:
-
-        # Read the image
-        image_file = cv2.imread(os.path.join(path, image))
-
-        # Resize the image
-        size = (width, height)
-        resized_image = cv2.resize(image_file, size, interpolation=cv2.INTER_AREA)
-
-        # Save the resized image
-        cv2.imwrite(os.path.join(resized_path, image), resized_image)
-
-
-def compare_images(image, screenshot, path):
-    """Compare the screenshot of the slot with the images in the img/resized directory"""
-
-    image_path = os.path.join(path, image)
-    image_file = cv2.imread(image_path)
-    similarity = skimage.metrics.structural_similarity(
-        image_file, screenshot, win_size=7, channel_axis=2
-    )
-    return similarity, image, image_path
-
-
-# Function to find out which images from the img diretory is the most close to the screenshot
-def find_closest_image(the_slot, unknown_image_path, unknown_image) -> Slot:
-    """Find the image that is the most close to the screenshot of the slot"""
-
-    # Get the screenshot of the slot
-    screenshot = cv2.imread(the_slot.screenshot)
-
-    # Get the similarity between the screenshot and the unknown image
-    similarity = skimage.metrics.structural_similarity(
-        unknown_image, screenshot, win_size=7, channel_axis=2
-    )
-
-    # If the similarity is high, the slot is empty
-    if similarity > 0.75:
-        the_slot.card_image = unknown_image_path
-        the_slot.card_name = "unknown"
-        the_slot.similarity = similarity
-        return the_slot
-
-    path = os.path.join(os.getcwd(), "crassistant", "img", "resized")
-
-    # Get the list of images in the img/cards directory
-    images = os.listdir(path)
-
-    num_cores = multiprocessing.cpu_count()
-    results = Parallel(n_jobs=num_cores)(
-        delayed(compare_images)(image, screenshot, path) for image in images
-    )
-
-    max_ssim, most_similar_image, image_path_chosen = max(results, key=lambda x: x[0])
-
-    the_slot.card_image = image_path_chosen
-    the_slot.card_name = most_similar_image.split(".")[0]
-    the_slot.similarity = max_ssim
-
-    return the_slot

@@ -11,3 +11,4 @@ class Slot:
     previous_screenshot: str = None
     current_screenshot: str = None
     similarity: float = 0.0
+    iterations_since_last_change: int = 0

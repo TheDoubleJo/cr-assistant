@@ -2,7 +2,7 @@
 
 import dataclasses
 import queue
-from crassistant.slot import Slot
+from crassistant.models.slot import Slot
 
 
 @dataclasses.dataclass

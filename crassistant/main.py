@@ -114,33 +114,35 @@ def update(
         print("Game over !")
         game_in_progress = False
 
-    cards_in_hand_image1 = Image.open(cards_in_hand.card1.previous_screenshot)
-    cards_in_hand_image_tk1 = ImageTk.PhotoImage(cards_in_hand_image1)
-    cards_in_hand_labels[0].configure(image=cards_in_hand_image_tk1)
-    cards_in_hand_labels[0].image = cards_in_hand_image_tk1
+    if game_in_progress:
 
-    slot_number_vars[0].set(f"{cards_in_hand.card1.index}")
+        cards_in_hand_image1 = Image.open(cards_in_hand.card1.previous_screenshot)
+        cards_in_hand_image_tk1 = ImageTk.PhotoImage(cards_in_hand_image1)
+        cards_in_hand_labels[0].configure(image=cards_in_hand_image_tk1)
+        cards_in_hand_labels[0].image = cards_in_hand_image_tk1
 
-    cards_in_hand_image2 = Image.open(cards_in_hand.card2.previous_screenshot)
-    cards_in_hand_image_tk2 = ImageTk.PhotoImage(cards_in_hand_image2)
-    cards_in_hand_labels[1].configure(image=cards_in_hand_image_tk2)
-    cards_in_hand_labels[1].image = cards_in_hand_image_tk2
+        slot_number_vars[0].set(f"{cards_in_hand.card1.index}")
 
-    slot_number_vars[1].set(f"{cards_in_hand.card2.index}")
+        cards_in_hand_image2 = Image.open(cards_in_hand.card2.previous_screenshot)
+        cards_in_hand_image_tk2 = ImageTk.PhotoImage(cards_in_hand_image2)
+        cards_in_hand_labels[1].configure(image=cards_in_hand_image_tk2)
+        cards_in_hand_labels[1].image = cards_in_hand_image_tk2
 
-    cards_in_hand_image3 = Image.open(cards_in_hand.card3.previous_screenshot)
-    cards_in_hand_image_tk3 = ImageTk.PhotoImage(cards_in_hand_image3)
-    cards_in_hand_labels[2].configure(image=cards_in_hand_image_tk3)
-    cards_in_hand_labels[2].image = cards_in_hand_image_tk3
+        slot_number_vars[1].set(f"{cards_in_hand.card2.index}")
 
-    slot_number_vars[2].set(f"{cards_in_hand.card3.index}")
+        cards_in_hand_image3 = Image.open(cards_in_hand.card3.previous_screenshot)
+        cards_in_hand_image_tk3 = ImageTk.PhotoImage(cards_in_hand_image3)
+        cards_in_hand_labels[2].configure(image=cards_in_hand_image_tk3)
+        cards_in_hand_labels[2].image = cards_in_hand_image_tk3
 
-    cards_in_hand_image4 = Image.open(cards_in_hand.card4.previous_screenshot)
-    cards_in_hand_image_tk4 = ImageTk.PhotoImage(cards_in_hand_image4)
-    cards_in_hand_labels[3].configure(image=cards_in_hand_image_tk4)
-    cards_in_hand_labels[3].image = cards_in_hand_image_tk4
+        slot_number_vars[2].set(f"{cards_in_hand.card3.index}")
 
-    slot_number_vars[3].set(f"{cards_in_hand.card4.index}")
+        cards_in_hand_image4 = Image.open(cards_in_hand.card4.previous_screenshot)
+        cards_in_hand_image_tk4 = ImageTk.PhotoImage(cards_in_hand_image4)
+        cards_in_hand_labels[3].configure(image=cards_in_hand_image_tk4)
+        cards_in_hand_labels[3].image = cards_in_hand_image_tk4
+
+        slot_number_vars[3].set(f"{cards_in_hand.card4.index}")
 
     # print(f"{pc() - t0:0.3f}")
 

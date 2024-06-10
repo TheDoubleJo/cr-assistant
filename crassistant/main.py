@@ -1,9 +1,7 @@
 """ This module contains the main functions of the program """
 
-from operator import le
 import os
 import tkinter as tk
-from time import perf_counter as pc
 from PIL import Image, ImageTk
 from crassistant.models.slot import Slot
 from crassistant.models.cards_in_hand import CardsInHand
@@ -64,9 +62,6 @@ def update(
 ):
     """Update the GUI"""
 
-    # Start a timer
-    t0 = pc()
-
     slots = take_screenshot(slots)
     slots_changed = []
     for i in range(8):
@@ -89,7 +84,7 @@ def update(
         )
 
         # Change detection
-        if slot.similarity < 0.3 and slot.iterations_since_last_change > 10:
+        if slot.similarity < 0.3 and slot.iterations_since_last_change > 5:
             slot.iterations_since_last_change = 0
             print(f"Change detected in slot {slot.index}")
             cards_in_hand = cards_in_hand_algo(cards_in_hand, slots, slot)
@@ -143,8 +138,6 @@ def update(
         cards_in_hand_labels[3].image = cards_in_hand_image_tk4
 
         slot_number_vars[3].set(f"{cards_in_hand.card4.index}")
-
-    # print(f"{pc() - t0:0.3f}")
 
     root.after(
         1000,

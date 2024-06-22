@@ -1,10 +1,9 @@
 """This module contains the Slot class which represents a slot in the game."""
 
-import dataclasses
+from pydantic import BaseModel
 
 
-@dataclasses.dataclass
-class Slot:
+class Slot(BaseModel):
     """This class represents a slot in the game"""
 
     index: int = None

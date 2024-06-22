@@ -1,12 +1,11 @@
 """This module contains the CardsInHand class which represents the 4 cards currently in hand."""
 
-import dataclasses
 import queue
+from pydantic import BaseModel
 from crassistant.models.slot import Slot
 
 
-@dataclasses.dataclass
-class CardsInHand:
+class CardsInHand(BaseModel):
     """This class represents the 4 cards currently in hand."""
 
     card1: Slot = None

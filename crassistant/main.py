@@ -161,7 +161,7 @@ def main():
     # Initialize the 8 slots
     slots = []
     for i in range(8):
-        slots.append(Slot(i, None, None, None))
+        slots.append(Slot(index=i))
 
     # Initialize the 4 cards in hand
     cards_in_hand = CardsInHand(
